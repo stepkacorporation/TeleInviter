@@ -122,8 +122,9 @@ async def main():
 
 if __name__ == '__main__':
     try:
+        logger.info('Старт программы.')
         asyncio.run(main())
-    except (KeyboardInterrupt, SystemExit):
+    except (KeyboardInterrupt, SystemExit, EOFError):
         logger.info('Завершение программы.')
     except Exception as critical_error:
         logger.critical(f'Необработанная ошибка: {critical_error}')
