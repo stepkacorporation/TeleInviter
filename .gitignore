@@ -5,7 +5,7 @@ venv/
 .env
 .idea
 *.log
-*.session
+*.session*
 
 dist/
 *.egg-info/
