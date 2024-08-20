@@ -42,9 +42,9 @@
    pip install -r requirements.txt
    ```
 
-4. Создайте файл .env в корневой директории проекта и добавьте в него свои API ключи:
+4. Создайте файл **\`.env\`** в корневой директории проекта и добавьте в него свои API ключи:
 
-   ```text
+   ```env
    API_ID=your_api_id_here
    API_HASH=your_api_hash_here
    SESSION_NAME=your_session_name_here
