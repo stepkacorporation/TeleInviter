@@ -6,6 +6,7 @@ from pyrogram import Client, errors
 from pyrogram.types.user_and_chats.chat_preview import ChatPreview
 
 from loguru import logger
+from typing import AsyncGenerator
 
 from config import api_id, api_hash, session_name
 
@@ -34,23 +35,22 @@ def extract_entity_from_link(link: str) -> str:
     raise ValueError('Некорректная ссылка')
 
 
-async def get_users(filepath: str) -> list[str]:
+async def get_users(filepath: str) -> AsyncGenerator[str, None]:
     """
-    Читает список пользователей из файла.
+    Генератор для построчного чтения списка пользователей из файла.
 
     :param filepath: Путь к файлу с именами пользователей.
-    :return: Список пользователей.
+    :return: Имена пользователей по одному за раз.
     """
 
     try:
         with open(filepath, 'r', encoding='utf-8') as file:
-            return [line.strip() for line in file.readlines()]
+            for line in file:
+                yield line.strip()
     except FileNotFoundError:
         logger.error(f'Файл "{filepath}" не найден!')
-        return []
     except Exception as error:
         logger.error(f'Ошибка при чтении файла "{filepath}": {error}')
-        return []
 
 
 async def main():
@@ -61,14 +61,6 @@ async def main():
 
     async with Client(session_name, api_id, api_hash) as app:
         app: Client
-
-        logger.info(f'Получаем имена пользователей из файла "{USERS_FILE}".')
-        users = await get_users(filepath=USERS_FILE)
-        num_users = len(users)
-        logger.info(f'Получено пользователей: {num_users}.')
-        if not users:
-            logger.warning(f'Нет пользователей для приглашения.')
-            return
 
         while True:
             invitation_link = input(f'\nВставьте ссылку на канал или группу для приглашения: ')
@@ -88,13 +80,11 @@ async def main():
                 logger.error(f'Не удалось присоединиться к группе: {error}')
                 return
 
-        logger.info(f'\nНачинаем процесс добавления {num_users} пользователей в канал/группу:\n')
+        logger.info(f'Начинаем процесс добавления пользователей в канал/группу:')
 
         added = 0
 
-        _max_len = len(str(num_users))
-        for i, username in enumerate(users, start=1):
-            logger.info(f'{i:>{_max_len}} - ', end='')
+        async for username in get_users(filepath=USERS_FILE):
             try:
                 is_added = await app.add_chat_members(chat_id=target_entity.id, user_ids=[username])
                 if is_added:
@@ -122,9 +112,12 @@ async def main():
             except Exception as error:
                 logger.error(f'Не удалось добавить пользователя {username}: {str(error)}')
 
+            if added % 10 == 0:
+                logger.success(f'Успешно добавлено {added} пользователей.')
+
             await asyncio.sleep(random.uniform(0.5, 1))
 
-        logger.info(f'\nВсего добавлено: {added} пользователей.')
+        logger.info(f'Всего добавлено: {added} пользователей.')
 
 
 if __name__ == '__main__':
